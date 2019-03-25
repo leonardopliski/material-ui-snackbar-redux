@@ -1,15 +1,38 @@
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
+import classNames from 'classnames';
+import { withStyles } from '@material-ui/core/styles';
 import { connect } from 'react-redux'
 import Snackbar from '@material-ui/core/Snackbar'
+import SnackbarContent from '@material-ui/core/SnackbarContent'
 import Button from '@material-ui/core/Button'
+import green from '@material-ui/core/colors/green';
+import amber from '@material-ui/core/colors/amber';
 import actions from './actions'
+
+// default snackbar styles
+const snackbarStyles = theme => ({
+  success: {
+    backgroundColor: green[600],
+  },
+  error: {
+    backgroundColor: theme.palette.error.dark,
+  },
+  info: {
+    backgroundColor: theme.palette.primary.dark,
+  },
+  warning: {
+    backgroundColor: amber[700],
+  },
+  default: { }
+});
 
 class SnackbarProvider extends PureComponent {
   state = {
     open: false,
     message: null,
-    action: null
+    action: null,
+    variant: null
   }
 
   getChildContext () {
@@ -55,23 +78,28 @@ class SnackbarProvider extends PureComponent {
   }
 
   render () {
-    const { children, SnackbarProps = {} } = this.props
-    const { action, message, open } = this.state
+    const { children, SnackbarProps = {}, classes } = this.props
+    const { action, message, open, variant } = this.state
 
     return (
       <React.Fragment>
         {children}
         <Snackbar {...SnackbarProps}
           open={open}
-          message={message || ''}
-          action={action && (
-            <Button color="secondary" size="small" onClick={this.handleActionClick}>
-              {action}
-            </Button>
-          )}
-          onClose={this.handleClose}
-          onExited={this.handleExited}
-        />
+        >
+          <SnackbarContent
+            className={classNames(classes[variant])}
+            message={message || ''}
+            action={action && (
+              <Button color="inherit" size="small" onClick={this.handleActionClick}>
+                {action}
+              </Button>
+            )}
+            onClose={this.handleClose}
+            onExited={this.handleExited}
+          >
+          </SnackbarContent>
+        </Snackbar>
       </React.Fragment>
     )
   }
@@ -83,7 +111,8 @@ SnackbarProvider.childContextTypes = {
 
 SnackbarProvider.propTypes = {
   children: PropTypes.node,
-  SnackbarProps: PropTypes.object
+  SnackbarProps: PropTypes.object,
+  classes: PropTypes.object.isRequired,
 }
 
 export default connect(
@@ -91,7 +120,7 @@ export default connect(
     snackbar: state.snackbar.queue[0] || null
   }),
   dispatch => ({
-    show: (message, action, handleAction) => dispatch(actions.show({ message, action, handleAction })),
+    show: (message, action, handleAction, variant = "default") => dispatch(actions.show({ message, action, handleAction, variant})),
     dismiss: (id) => dispatch(actions.dismiss({ id }))
   })
-)(SnackbarProvider)
+)(withStyles(snackbarStyles)(SnackbarProvider))
